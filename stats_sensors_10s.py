@@ -19,8 +19,8 @@ col_names = df.columns.to_list()
 
 ref_pos = [i for i, name in enumerate(col_names) if 'ref' in name]  # index of the reference sensor
 ref_pos_int = int(ref_pos[0])
-''' 
-Determine the steady state temperatures and the times 
+'''
+Determine the steady state temperatures and the times
 at which they *ended (time = when temp increases or deceases
 '''
 up_times = []
@@ -32,7 +32,7 @@ t = 0
 while t < len(df):
     if t > 2:
         if len(up_temps) > 0:
-            if (df.iloc[t][-2] - df.iloc[t-5][-2] >= 1.10 and df.iloc[t-5][-2] - df.iloc[t-10][-2] <= 1.00 and up_times[-1]
+            if (df.iloc[t][-2] - df.iloc[t-3][-2] >= 1.10 and df.iloc[t-3][-2] - df.iloc[t-6][-2] <= 1.00 and up_times[-1]
                 <= t - 50) or (df.iloc[t][-2] -
                                df.iloc[t-3][-2] <= -1 and df.iloc[t-3][-2] - df.iloc[t-6][-2] >= -1 and
                                max(df.iloc[t-interval:t-100, -2]) < df.iloc[t-3][-2] + 2):  # uptrending
@@ -44,9 +44,9 @@ while t < len(df):
                     interval = up_times[1] - up_times[0]  #update interval length once we have enough data
                 t = t + 2 # skip 20 seconds ahead
         if len(up_temps) == 0:
-            if (df.iloc[t][-2] - df.iloc[t-5][-2] >= 1.10 and df.iloc[t-5][-2] - df.iloc[t-10][-2] <= 1.00) or (df.iloc[t][-2] -
-                df.iloc[t-3][-2] <= -1 and df.iloc[t-3][-2] - df.iloc[t-6][-2] >= -1 and
-                max(df.iloc[t-interval:t-100, -2]) < df.iloc[t-3][-2] + 2):  # uptrending
+            if (df.iloc[t][-2] - df.iloc[t-3][-2] >= 1.10 and df.iloc[t-3][-2] - df.iloc[t-6][-2] <= 1.00) or (df.iloc[t][-2] -
+                                                                                                                df.iloc[t-3][-2] <= -1 and df.iloc[t-3][-2] - df.iloc[t-6][-2] >= -1 and
+                                                                                                                max(df.iloc[t-interval:t-100, -2]) < df.iloc[t-3][-2] + 2):  # uptrending
                 # this max statement below says that the max temperature from -3000s to -1000s must be less than
                 # the current temperature (plus 2, to be sure), otherwise it must be downtrending
                 up_times.append(t-3)
@@ -55,19 +55,19 @@ while t < len(df):
                     interval = up_times[1] - up_times[0]  #update interval length once we have enough data
                 t = t + 2 # skip 20 seconds ahead
         if len(down_temps) == 0:
-            if (df.iloc[t][-2] - df.iloc[t-5][-2] <= -1.00 and df.iloc[t-5][-2] - df.iloc[t-10][-2] >= -1.00
+            if (df.iloc[t][-2] - df.iloc[t-3][-2] <= -1.00 and df.iloc[t-3][-2] - df.iloc[t-6][-2] >= -1.00
                 and max(df.iloc[t-interval:t-100, -2]) > df.iloc[t-3][-2] + 2) or (t == len(df)-1 and     #or at the end and
                                                                                    max(df.iloc[t-120:t, -2]) < min(df.iloc[t-120:t, -2]) + 2 and # if the max over the past 20 min is not much greater than min, then steady state
                                                                                    max(df.iloc[t-interval:t-100, -2]) > df.iloc[t-3][-2] + 2):  # downtrending
                 if t != len(df) - 1:
-                    down_times.append(t-10)
-                    down_temps.append(df.iloc[t-10][ref_pos][0])
+                    down_times.append(t-3)
+                    down_temps.append(df.iloc[t-3][ref_pos][0])
                 if t == len(df) - 1:
                     down_times.append(t)
                     down_temps.append(df.iloc[t][ref_pos][0])
                 t = t + 2  # skip 20 seconds ahead
         if len(down_temps) > 0:
-            if (df.iloc[t][-2] - df.iloc[t-5][-2] <= -1.00 and df.iloc[t-5][-2] - df.iloc[t-10][-2] >= -1.00
+            if (df.iloc[t][-2] - df.iloc[t-3][-2] <= -1.00 and df.iloc[t-3][-2] - df.iloc[t-6][-2] >= -1.00
                 and max(df.iloc[t-interval:t-100, -2]) > df.iloc[t-3][-2] + 2 and down_times[-1]
                 <= t - 50) or (t == len(df)-1 and     #or at the end and
                                max(df.iloc[t-120:t, -2]) < min(df.iloc[t-120:t, -2]) + 2 and # if the max over the past 20 min is not much greater than min, then steady state
@@ -179,7 +179,7 @@ for i in range(len(down_temps)):
     i += 1
 
 
-''' to do: when a sensor is missing, the combined uncertainty is returned as Nan... need to build warning that sensor 
+''' to do: when a sensor is missing, the combined uncertainty is returned as Nan... need to build warning that sensor
 value is missing'''
 
 
@@ -249,7 +249,7 @@ down_row_holder.iloc[0] = '***************'
 down_row_holder.iloc[1][0] = 'Downtrending'
 hys_row_holder = pd.DataFrame(columns=col_names, index=['', 'trend'])
 hys_row_holder.iloc[0] = '***************'
-hys_row_holder.iloc[1][0] = 'Hysteresis'
+hys_row_holder.iloc[1][0] = 'Average of Up + Down'
 
 #append dfs together into one df "stats"
 stats = hys_row_holder.append(hys_stats)
